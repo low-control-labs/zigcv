@@ -13,6 +13,19 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const gocv_dep = b.dependency("gocv", .{});
+    const fenster_dep = b.dependency("fenster", .{});
+    // Upstream fenster.h plus the close handling, key queue and set_title zigcv needs.
+    const fenster_patcher = b.addExecutable(.{
+        .name = "patch_fenster",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/patch_fenster.zig"),
+            .target = b.graph.host,
+            .optimize = .ReleaseSafe,
+        }),
+    });
+    const fenster_patch = b.addRunArtifact(fenster_patcher);
+    fenster_patch.addFileArg(fenster_dep.path("fenster.h"));
+    const fenster_h = fenster_patch.addOutputFileArg("fenster.h");
     const gocv_src_dir = gocv_dep.path("");
     const gocv_contrib_dir = gocv_dep.path("contrib");
     // Upstream core.h/core.cpp/dnn.cpp/objdetect.cpp plus Mats_New and the string ownership fixes zigcv needs.
@@ -100,6 +113,9 @@ pub fn build(b: *std.Build) void {
         .flags = c_build_options,
     });
 
+    // fenster: single-header window/framebuffer (the header is also the implementation).
+    lib_mod.addCSourceFile(.{ .file = fenster_h, .language = .c });
+
     b.installArtifact(zigcv_lib);
 
     // ---- C bindings ---------------------------------------------------------
@@ -118,6 +134,15 @@ pub fn build(b: *std.Build) void {
     translate_c.addIncludePath(opencv4_headers_dir);
     const c_mod = translate_c.createModule();
 
+    // Separate module so X11 names (Window, Display, ...) don't mix into `c`.
+    const translate_fenster = b.addTranslateC(.{
+        .root_source_file = fenster_h,
+        .target = target,
+        .optimize = optimize,
+    });
+    translate_fenster.defineCMacro("FENSTER_HEADER", null);
+    const fenster_mod = translate_fenster.createModule();
+
     // ---- Zig module ---------------------------------------------------------
     const zigcv = b.addModule("root", .{
         .root_source_file = b.path("src/main.zig"),
@@ -126,6 +151,7 @@ pub fn build(b: *std.Build) void {
         .link_libcpp = true,
         .imports = &.{
             .{ .name = "c", .module = c_mod },
+            .{ .name = "fenster", .module = fenster_mod },
         },
     });
     // Link inputs live on the module so every artifact importing it (examples, tests,
@@ -136,6 +162,15 @@ pub fn build(b: *std.Build) void {
     for (opencv_3rdparty_libs) |name| zigcv.addObjectFile(opencv.prefix.path(b, b.fmt("lib/opencv4/3rdparty/lib{s}.a", .{name})));
     zigcv.addObjectFile(opencv.tbb_prefix.path(b, "lib/libtbb.a"));
     zigcv.addObjectFile(opencv.openblas_prefix.path(b, "lib/libopenblas.a"));
+    switch (target.result.os.tag) {
+        .macos => zigcv.linkFramework("Cocoa", .{}),
+        .windows => zigcv.linkSystemLibrary("gdi32", .{}),
+        else => {
+            zigcv.linkSystemLibrary("X11", .{});
+            zigcv.linkSystemLibrary("dl", .{});
+            zigcv.linkSystemLibrary("pthread", .{});
+        },
+    }
 
     // ---- Unit tests ---------------------------------------------------------
     const unit_tests = b.addTest(.{ .root_module = zigcv });
