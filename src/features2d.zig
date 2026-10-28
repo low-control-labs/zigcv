@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
 const epnn = utils.ensurePtrNotNull;
@@ -731,8 +731,8 @@ pub const DrawMatchesFlag = enum(u2) {
 /// https://docs.opencv.org/master/d4/d5d/group__features2d__draw.html#gab958f8900dd10f14316521c149a60433
 pub fn drawKeyPoints(src: Mat, kp: []KeyPoint, dst: *Mat, color_: Color, flags: DrawMatchesFlag, allocator: std.mem.Allocator) !void {
     var c_keypoints_array = try std.ArrayList(c.KeyPoint).initCapacity(allocator, kp.len);
-    defer c_keypoints_array.deinit();
-    for (kp) |keypoint| try c_keypoints_array.append(keypoint.toC());
+    defer c_keypoints_array.deinit(allocator);
+    for (kp) |keypoint| try c_keypoints_array.append(allocator, keypoint.toC());
     const c_keypoints = c.KeyPoints{
         .length = @as(i32, @intCast(kp.len)),
         .keypoints = @as([*]c.KeyPoint, @ptrCast(c_keypoints_array.items)),
@@ -781,7 +781,7 @@ pub fn drawMatches(
         .dmatches = @as([*]c.DMatch, @ptrCast(c_matches1to2_array.ptr)),
     };
 
-    var c_matches_mask = core.toByteArray(matches_mask);
+    const c_matches_mask = core.toByteArray(matches_mask);
     c.DrawMatches(
         img1.toC(),
         c_keypoints1,
@@ -833,7 +833,7 @@ pub const DMatch = struct {
         var result = try std.ArrayList(Self).initCapacity(allocator, len);
         {
             for (ret) |dmatch| {
-                try result.append(Self.init(
+                try result.append(allocator, Self.init(
                     dmatch.queryIdx,
                     dmatch.trainIdx,
                     dmatch.imgIdx,
@@ -854,7 +854,7 @@ pub const DMatch = struct {
                 var i: usize = 0;
                 while (i < len) : (i += 1) {
                     const dmatch = dmatches.dmatches[i];
-                    try dmatch_list.append(Self.init(
+                    try dmatch_list.append(allocator, Self.init(
                         dmatch.queryIdx,
                         dmatch.trainIdx,
                         dmatch.imgIdx,
@@ -862,7 +862,7 @@ pub const DMatch = struct {
                     ));
                 }
             }
-            try result.append(dmatch_list);
+            try result.append(allocator, dmatch_list);
         }
         return .{ .array = result };
     }
@@ -872,9 +872,9 @@ const DMathes = std.ArrayList(DMatch);
 const MultiDMatches = struct {
     array: std.ArrayList(DMathes),
 
-    pub fn deinit(self: MultiDMatches) void {
-        for (self.array.items) |m| m.deinit();
-        self.array.deinit();
+    pub fn deinit(self: *MultiDMatches, allocator: std.mem.Allocator) void {
+        for (self.array.items) |*m| m.deinit(allocator);
+        self.array.deinit(allocator);
     }
 };
 
@@ -882,7 +882,7 @@ const testing = std.testing;
 const imgcodecs = @import("imgcodecs.zig");
 
 test "feature2d AKAZE" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -893,7 +893,7 @@ test "feature2d AKAZE" {
     defer ak.deinit();
 
     var kp = try ak.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(kp.items.len >= 512);
 
@@ -903,7 +903,7 @@ test "feature2d AKAZE" {
     defer mask.deinit();
 
     var kp2 = try ak.detectAndCompute(img, mask, &desc, std.testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     try testing.expect(kp2.items.len >= 512);
     try testing.expectEqual(kp2.items.len, kp.items.len);
@@ -911,7 +911,7 @@ test "feature2d AKAZE" {
 }
 
 test "feature2d AgastFeatureDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -922,13 +922,13 @@ test "feature2d AgastFeatureDetector" {
     defer ad.deinit();
 
     var kp = try ad.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(kp.items.len >= 2800);
 }
 
 test "feature2d BRISK" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -939,7 +939,7 @@ test "feature2d BRISK" {
     defer br.deinit();
 
     var kp = try br.detect(img, std.testing.allocator);
-    kp.deinit();
+    kp.deinit(testing.allocator);
 
     var desc = try Mat.init();
     defer desc.deinit();
@@ -947,14 +947,14 @@ test "feature2d BRISK" {
     defer mask.deinit();
 
     var kp2 = try br.detectAndCompute(img, mask, &desc, std.testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 1105), kp2.items.len);
     try testing.expectEqual(false, desc.isEmpty());
 }
 
 test "feature2d FastFeatureDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -965,13 +965,13 @@ test "feature2d FastFeatureDetector" {
     defer fd.deinit();
 
     var kp = try fd.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(kp.items.len >= 2690);
 }
 
 test "feature2d GFTTDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -982,13 +982,13 @@ test "feature2d GFTTDetector" {
     defer gft.deinit();
 
     var kp = try gft.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(kp.items.len >= 512);
 }
 
 test "feature2d KAZE" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
 
     var dst = try Mat.init();
@@ -998,7 +998,7 @@ test "feature2d KAZE" {
     defer kaze.deinit();
 
     var kp = try kaze.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(kp.items.len >= 512);
 
@@ -1008,14 +1008,14 @@ test "feature2d KAZE" {
     defer mask.deinit();
 
     var kp2 = try kaze.detectAndCompute(img, mask, &desc, std.testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     try testing.expect(kp2.items.len >= 512);
     try testing.expectEqual(false, desc.isEmpty());
 }
 
 test "feature2d MSER" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1026,14 +1026,14 @@ test "feature2d MSER" {
     defer mser.deinit();
 
     var kp = try mser.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     const len = kp.items.len;
     try testing.expect(len == 232 or len == 234 or len == 261);
 }
 
 test "feature2d ORB" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1044,7 +1044,7 @@ test "feature2d ORB" {
     defer orb.deinit();
 
     var kp = try orb.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 500), kp.items.len);
 
@@ -1054,14 +1054,14 @@ test "feature2d ORB" {
     defer desc.deinit();
 
     var kp2 = try orb.detectAndCompute(img, mask, &desc, std.testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 500), kp2.items.len);
     try testing.expectEqual(false, desc.isEmpty());
 }
 
 test "feature2d SimpleBlobDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1072,13 +1072,13 @@ test "feature2d SimpleBlobDetector" {
     defer sbd.deinit();
 
     var kp = try sbd.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 2), kp.items.len);
 }
 
 test "feature2d SimpleBlobDetectorWithParams" {
-    var img = try imgcodecs.imRead("libs/gocv/images/circles.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/circles.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1092,18 +1092,18 @@ test "feature2d SimpleBlobDetectorWithParams" {
     defer sbd.deinit();
 
     var kp = try sbd.detect(img, std.testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 4), kp.items.len);
 }
 
 test "feature2d BFMatcher" {
     const img_path = "libs/gocv/images/sift_descriptor.png";
-    var desc1 = try imgcodecs.imRead(img_path, .gray_scale);
+    var desc1 = try imgcodecs.imRead(std.testing.io,img_path, .gray_scale);
     defer desc1.deinit();
     try testing.expectEqual(false, desc1.isEmpty());
 
-    var desc2 = try imgcodecs.imRead(img_path, .gray_scale);
+    var desc2 = try imgcodecs.imRead(std.testing.io,img_path, .gray_scale);
     defer desc2.deinit();
     try testing.expectEqual(false, desc2.isEmpty());
 
@@ -1112,7 +1112,7 @@ test "feature2d BFMatcher" {
 
     const k = 2;
     var matches = try bfm.knnMatch(desc1, desc2, k, std.testing.allocator);
-    defer matches.deinit();
+    defer matches.deinit(testing.allocator);
 
     try testing.expect(matches.array.items.len > 0);
 
@@ -1123,11 +1123,11 @@ test "feature2d BFMatcher" {
 
 test "feature2d FlannBasedMatcher" {
     const img_path = "libs/gocv/images/sift_descriptor.png";
-    var desc1 = try imgcodecs.imRead(img_path, .gray_scale);
+    var desc1 = try imgcodecs.imRead(std.testing.io,img_path, .gray_scale);
     defer desc1.deinit();
     desc1.convertTo(&desc1, .cv32fc1);
 
-    var desc2 = try imgcodecs.imRead(img_path, .gray_scale);
+    var desc2 = try imgcodecs.imRead(std.testing.io,img_path, .gray_scale);
     defer desc2.deinit();
     desc2.convertTo(&desc2, .cv32fc1);
 
@@ -1137,7 +1137,7 @@ test "feature2d FlannBasedMatcher" {
     const k = 2;
 
     var matches = try fbm.knnMatch(desc1, desc2, k, std.testing.allocator);
-    defer matches.deinit();
+    defer matches.deinit(testing.allocator);
 
     try testing.expect(matches.array.items.len > 0);
 
@@ -1147,7 +1147,7 @@ test "feature2d FlannBasedMatcher" {
 }
 
 test "feature2d drawPoints" {
-    var img = try imgcodecs.imRead("libs/gocv/images/simple.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/simple.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1155,7 +1155,7 @@ test "feature2d drawPoints" {
     defer ffd.deinit();
 
     var kp = try ffd.detect(img, testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     var simple_KP = try Mat.init();
     defer simple_KP.deinit();
@@ -1171,11 +1171,11 @@ test "feature2d DrawMatches" {
     const query_path = "libs/gocv/images/box.png";
     const train_path = "libs/gocv/images/box_in_scene.png";
 
-    var query = try imgcodecs.imRead(query_path, .color);
+    var query = try imgcodecs.imRead(std.testing.io,query_path, .color);
     defer query.deinit();
     try testing.expectEqual(false, query.isEmpty());
 
-    var train = try imgcodecs.imRead(train_path, .color);
+    var train = try imgcodecs.imRead(std.testing.io,train_path, .color);
     defer train.deinit();
     try testing.expectEqual(false, train.isEmpty());
 
@@ -1192,23 +1192,23 @@ test "feature2d DrawMatches" {
     defer desc2.deinit();
 
     var kp1 = try sift.detectAndCompute(query, m1, &desc1, std.testing.allocator);
-    defer kp1.deinit();
+    defer kp1.deinit(testing.allocator);
     var kp2 = try sift.detectAndCompute(train, m2, &desc2, std.testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     var bf = try BFMatcher.init();
     defer bf.deinit();
 
     var matches = try bf.knnMatch(desc1, desc2, 2, std.testing.allocator);
-    defer matches.deinit();
+    defer matches.deinit(testing.allocator);
 
     try testing.expect(matches.array.items.len > 0);
 
-    var good = std.ArrayList(DMatch).init(std.testing.allocator);
-    defer good.deinit();
+    var good: std.ArrayList(DMatch) = .empty;
+    defer good.deinit(std.testing.allocator);
     for (matches.array.items) |m| {
         if (m.items[0].distance < 0.75 * m.items[1].distance) {
-            try good.append(m.items[0]);
+            try good.append(std.testing.allocator, m.items[0]);
         }
     }
 
@@ -1234,7 +1234,7 @@ test "feature2d DrawMatches" {
 }
 
 test "feature2d SIFT" {
-    var img = try imgcodecs.imRead("libs/gocv/images/sift_descriptor.png", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/sift_descriptor.png", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1245,7 +1245,7 @@ test "feature2d SIFT" {
     defer si.deinit();
 
     var kp = try si.detect(img, testing.allocator);
-    defer kp.deinit();
+    defer kp.deinit(testing.allocator);
 
     try testing.expect(@as(usize, 512) != kp.items.len);
 
@@ -1256,7 +1256,7 @@ test "feature2d SIFT" {
     defer desc.deinit();
 
     var kp2 = try si.detectAndCompute(img, mask, &dst, testing.allocator);
-    defer kp2.deinit();
+    defer kp2.deinit(testing.allocator);
 
     try testing.expect(@as(usize, 512) != kp2.items.len);
     try testing.expectEqual(false, dst.isEmpty());
