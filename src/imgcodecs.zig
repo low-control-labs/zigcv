@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const ensureFileExists = utils.ensureFileExists;
@@ -136,9 +136,9 @@ pub const IMWriteParam = struct { f: IMWriteFlag, v: i32 };
 /// For further details, please see:
 /// http://docs.opencv.org/master/d4/da8/group__imgcodecs.html#ga288b8b3da0892bd651fce07b3bbd3a56
 ///
-pub fn imRead(filename: []const u8, flags: IMReadFlag) !Mat {
-    try ensureFileExists(filename, true);
-    var cMat: c.Mat = c.Image_IMRead(@as([*]const u8, @ptrCast(filename)), @intFromEnum(flags));
+pub fn imRead(io: std.Io, filename: []const u8, flags: IMReadFlag) !Mat {
+    try ensureFileExists(io, filename, true);
+    const cMat: c.Mat = c.Image_IMRead(@as([*]const u8, @ptrCast(filename)), @intFromEnum(flags));
     return try Mat.initFromC(cMat);
 }
 
@@ -162,10 +162,10 @@ pub fn imWrite(filename: []const u8, img: Mat) !void {
 /// https://docs.opencv.org/4.6.0/d8/d6a/group__imgcodecs__flags.html
 ///
 pub fn imWriteWithParams(filename: []const u8, img: Mat, comptime params: []const IMWriteParam) !void {
-    const c_params = comptime blk: {
+    const c_params = blk: {
         const len = params.len * 2;
         var pa: [len]i32 = undefined;
-        inline for (params, 0..) |p, i| {
+        for (params, 0..) |p, i| {
             pa[2 * i] = @intFromEnum(p.f);
             pa[2 * i + 1] = p.v;
         }
@@ -192,7 +192,7 @@ pub fn imDecode(buf: []u8, flags: IMReadFlag) !Mat {
     if (buf.len == 0) {
         return Mat.init();
     }
-    var data = core.toByteArray(buf);
+    const data = core.toByteArray(buf);
     return try Mat.initFromC(c.Image_IMDecode(data, @intFromEnum(flags)));
 }
 
@@ -205,7 +205,7 @@ pub fn imDecode(buf: []u8, flags: IMReadFlag) !Mat {
 ///
 pub fn imEncode(file_ext: FileExt, img: Mat, allocator: std.mem.Allocator) !std.ArrayList(u8) {
     var c_vector: STDVector = undefined;
-    var cvp = &c_vector;
+    const cvp = &c_vector;
     STDVector.init(cvp);
     defer STDVector.deinit(cvp);
     c.Image_IMEncode(@as([*]const u8, @ptrCast(file_ext.toString())), img.ptr, cvp);
@@ -215,7 +215,7 @@ pub fn imEncode(file_ext: FileExt, img: Mat, allocator: std.mem.Allocator) !std.
     {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            try buf.append(data[i]);
+            try buf.append(allocator, data[i]);
         }
     }
     return buf;
@@ -229,10 +229,10 @@ pub fn imEncode(file_ext: FileExt, img: Mat, allocator: std.mem.Allocator) !std.
 /// http://docs.opencv.org/master/d4/da8/group__imgcodecs.html#ga461f9ac09887e47797a54567df3b8b63
 ///
 pub fn imEncodeWithParams(file_ext: FileExt, img: Mat, comptime params: []const IMWriteParam, allocator: std.mem.Allocator) !std.ArrayList(u8) {
-    const c_params = comptime blk: {
+    const c_params = blk: {
         const len = params.len * 2;
         var pa: [len]i32 = undefined;
-        inline for (params, 0..) |p, i| {
+        for (params, 0..) |p, i| {
             pa[2 * i] = @intFromEnum(p.f);
             pa[2 * i + 1] = p.v;
         }
@@ -242,7 +242,7 @@ pub fn imEncodeWithParams(file_ext: FileExt, img: Mat, comptime params: []const 
         };
     };
     var c_vector: STDVector = undefined;
-    var cvp = &c_vector;
+    const cvp = &c_vector;
     STDVector.init(cvp);
     defer STDVector.deinit(cvp);
     c.Image_IMEncode_WithParams(@as([*]const u8, @ptrCast(file_ext.toString())), img.ptr, c_params, cvp);
@@ -252,7 +252,7 @@ pub fn imEncodeWithParams(file_ext: FileExt, img: Mat, comptime params: []const 
     {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            try buf.append(data[i]);
+            try buf.append(allocator, data[i]);
         }
     }
     return buf;
@@ -260,22 +260,21 @@ pub fn imEncodeWithParams(file_ext: FileExt, img: Mat, comptime params: []const 
 
 const testing = std.testing;
 const img_dir = "./libs/gocv/images/";
-const cache_dir = "./zig-cache/tmp/";
+const cache_dir = "./.zig-cache/tmp/";
 const face_detect_img_path = img_dir ++ "face-detect.jpg";
 test "imgcodecs imread" {
-    var img = try imRead(face_detect_img_path, .color);
+    var img = try imRead(std.testing.io,face_detect_img_path, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 }
 
 test "imgcodecs imread not found error" {
-    var e = imRead("not-exist-path/" ++ face_detect_img_path, .color);
-    try testing.expectError(error.FileNotFound, e);
+    try testing.expectError(error.FileNotFound, imRead(std.testing.io, "not-exist-path/" ++ face_detect_img_path, .color));
 }
 
 test "imgcodecs imwrite" {
     const filename = cache_dir ++ "test_imwrite0.jpg";
-    var img = try imRead(face_detect_img_path, .color);
+    var img = try imRead(std.testing.io,face_detect_img_path, .color);
     defer img.deinit();
 
     try imWrite(filename, img);
@@ -283,7 +282,7 @@ test "imgcodecs imwrite" {
 
 test "imgcodecs imwriteWithParams" {
     const filename = cache_dir ++ "test_imwrite1.jpg";
-    var img = try imRead(face_detect_img_path, .color);
+    var img = try imRead(std.testing.io,face_detect_img_path, .color);
     defer img.deinit();
 
     const params = [_]IMWriteParam{.{ .f = .jpeg_quality, .v = 60 }};
@@ -291,21 +290,21 @@ test "imgcodecs imwriteWithParams" {
 }
 
 test "imgcodecs imencode" {
-    var img = try imRead(face_detect_img_path, .color);
+    var img = try imRead(std.testing.io,face_detect_img_path, .color);
     defer img.deinit();
 
     var buf = try imEncode(.jpg, img, testing.allocator);
-    defer buf.deinit();
+    defer buf.deinit(testing.allocator);
     try testing.expect(buf.items.len > 43000);
 }
 
 test "imgcodecs imencodeWithParams" {
-    var img = try imRead(face_detect_img_path, .color);
+    var img = try imRead(std.testing.io,face_detect_img_path, .color);
     defer img.deinit();
 
     const params = [_]IMWriteParam{.{ .f = .jpeg_quality, .v = 75 }};
     var buf = try imEncodeWithParams(.jpg, img, &params, testing.allocator);
-    defer buf.deinit();
+    defer buf.deinit(testing.allocator);
     try testing.expect(buf.items.len > 18000);
 }
 
@@ -317,13 +316,7 @@ test "imgcodecs imdecode empty" {
 
 test "imgcodecs imdecode jpg" {
     const img_filename = img_dir ++ "face.jpg";
-    var img_file = try std.fs.cwd().openFile(img_filename, .{});
-    const img_stat = try std.fs.cwd().statFile(img_filename);
-    defer img_file.close();
-    var content = try img_file.reader().readAllAlloc(
-        testing.allocator,
-        img_stat.size,
-    );
+    const content = try std.Io.Dir.cwd().readFileAlloc(testing.io, img_filename, testing.allocator, .unlimited);
     defer testing.allocator.free(content);
 
     var img = try imDecode(content, .color);
@@ -333,13 +326,7 @@ test "imgcodecs imdecode jpg" {
 
 test "imgcodecs imdecode png" {
     const img_filename = img_dir ++ "box.png";
-    var img_file = try std.fs.cwd().openFile(img_filename, .{});
-    const img_stat = try std.fs.cwd().statFile(img_filename);
-    defer img_file.close();
-    var content = try img_file.reader().readAllAlloc(
-        testing.allocator,
-        img_stat.size,
-    );
+    const content = try std.Io.Dir.cwd().readFileAlloc(testing.io, img_filename, testing.allocator, .unlimited);
     defer testing.allocator.free(content);
 
     var img = try imDecode(content, .color);
@@ -349,13 +336,7 @@ test "imgcodecs imdecode png" {
 
 test "imgcodecs imdecode webp" {
     const img_filename = img_dir ++ "sample.webp";
-    var img_file = try std.fs.cwd().openFile(img_filename, .{});
-    const img_stat = try std.fs.cwd().statFile(img_filename);
-    defer img_file.close();
-    var content = try img_file.reader().readAllAlloc(
-        testing.allocator,
-        img_stat.size,
-    );
+    const content = try std.Io.Dir.cwd().readFileAlloc(testing.io, img_filename, testing.allocator, .unlimited);
     defer testing.allocator.free(content);
 
     var img = try imDecode(content, .color);
