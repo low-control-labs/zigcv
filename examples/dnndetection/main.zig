@@ -21,17 +21,17 @@ const Mat = cv.Mat;
 const Size = cv.Size;
 const c_api = cv.c_api;
 
-const cache_dir = "./zig-cache/tmp/";
+const cache_dir = "./.zig-cache/tmp/";
 const model_path = cache_dir ++ "res10_300x300_ssd_iter_140000.caffemodel";
 const config_path = cache_dir ++ "deploy.prototxt";
 
-pub fn main() anyerror!void {
-    var allocator = std.heap.page_allocator;
-    var args = try std.process.argsWithAllocator(allocator);
+pub fn main(init: std.process.Init) anyerror!void {
+    const allocator = std.heap.page_allocator;
+    var args = try init.minimal.args.iterateAllocator(allocator);
     const prog = args.next();
     const device_id_char = args.next() orelse {
         std.log.err("usage: {s} [cameraID]", .{prog.?});
-        std.os.exit(1);
+        std.process.exit(1);
     };
     args.deinit();
 
@@ -52,17 +52,17 @@ pub fn main() anyerror!void {
     defer img.deinit();
 
     // open DNN object tracking model
-    try cv.utils.ensureModelFile("res10_300x300_ssd_iter_140000.caffemodel", allocator);
-    try cv.utils.ensureModelFile("deploy.prototxt", allocator);
-    var net = cv.Net.readNet(model_path, config_path) catch |err| {
+    try cv.utils.ensureModelFile(init.io, init.minimal.environ, "res10_300x300_ssd_iter_140000.caffemodel", allocator);
+    try cv.utils.ensureModelFile(init.io, init.minimal.environ, "deploy.prototxt", allocator);
+    var net = cv.Net.readNet(init.io, model_path, config_path) catch |err| {
         std.debug.print("Error: {}\n", .{err});
-        std.os.exit(1);
+        std.process.exit(1);
     };
     defer net.deinit();
 
     if (net.isEmpty()) {
         std.debug.print("Error: could not load model\n", .{});
-        std.os.exit(1);
+        std.process.exit(1);
     }
 
     net.setPreferableBackend(.default);
@@ -75,7 +75,7 @@ pub fn main() anyerror!void {
     while (true) {
         webcam.read(&img) catch {
             std.debug.print("capture failed", .{});
-            std.os.exit(1);
+            std.process.exit(1);
         };
         if (img.isEmpty()) {
             continue;
@@ -116,14 +116,14 @@ fn performDetection(frame: *Mat, results: Mat) void {
     const green = cv.Color{ .g = 255 };
     var i: usize = 0;
     while (i < results.total()) {
-        var confidence = results.get(f32, 0, i + 2);
+        const confidence = results.get(f32, 0, i + 2);
         const cols: f32 = @floatFromInt(frame.cols());
         const rows: f32 = @floatFromInt(frame.rows());
         if (confidence > 0.5) {
-            var left: i32 = @intFromFloat(results.get(f32, 0, i + 3) * cols);
-            var top: i32 = @intFromFloat(results.get(f32, 0, i + 4) * rows);
-            var right: i32 = @intFromFloat(results.get(f32, 0, i + 5) * cols);
-            var bottom: i32 = @intFromFloat(results.get(f32, 0, i + 6) * rows);
+            const left: i32 = @intFromFloat(results.get(f32, 0, i + 3) * cols);
+            const top: i32 = @intFromFloat(results.get(f32, 0, i + 4) * rows);
+            const right: i32 = @intFromFloat(results.get(f32, 0, i + 5) * cols);
+            const bottom: i32 = @intFromFloat(results.get(f32, 0, i + 6) * rows);
             cv.rectangle(frame, cv.Rect{ .x = left, .y = top, .width = right, .height = bottom }, green, 2);
         }
         i += 7;
