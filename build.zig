@@ -15,6 +15,18 @@ pub fn build(b: *std.Build) void {
     const gocv_dep = b.dependency("gocv", .{});
     const gocv_src_dir = gocv_dep.path("");
     const gocv_contrib_dir = gocv_dep.path("contrib");
+    // Upstream core.h/core.cpp/dnn.cpp/objdetect.cpp plus Mats_New and the string ownership fixes zigcv needs.
+    const gocv_patcher = b.addExecutable(.{
+        .name = "patch_gocv",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/patch_gocv.zig"),
+            .target = b.graph.host,
+            .optimize = .ReleaseSafe,
+        }),
+    });
+    const gocv_patch = b.addRunArtifact(gocv_patcher);
+    gocv_patch.addDirectoryArg(gocv_src_dir);
+    const gocv_patched_dir = gocv_patch.addOutputDirectoryArg("gocv_patched");
     // Used by the face detection examples.
     b.addNamedLazyPath("haarcascade_frontalface_default", gocv_dep.path("data/haarcascade_frontalface_default.xml"));
 
@@ -35,6 +47,7 @@ pub fn build(b: *std.Build) void {
     zigcv_lib.step.dependOn(&opencv_libs.step);
 
     const lib_mod = zigcv_lib.root_module;
+    lib_mod.addIncludePath(gocv_patched_dir); // Patched gocv sources, ahead of the originals
     lib_mod.addIncludePath(gocv_src_dir); // OpenCV C bindings base
     lib_mod.addIncludePath(gocv_contrib_dir); // OpenCV contrib C bindings
     lib_mod.addIncludePath(b.path(zig_src_dir)); // Our glue header
@@ -42,16 +55,23 @@ pub fn build(b: *std.Build) void {
 
     lib_mod.addCSourceFiles(.{
         .files = &.{
+            "core.cpp",
+            "dnn.cpp",
+            "objdetect.cpp",
+        },
+        .root = gocv_patched_dir,
+        .flags = c_build_options,
+    });
+
+    lib_mod.addCSourceFiles(.{
+        .files = &.{
             "aruco.cpp",
             "asyncarray.cpp",
             "calib3d.cpp",
-            "core.cpp",
-            "dnn.cpp",
             "features2d.cpp",
             "highgui.cpp",
             "imgcodecs.cpp",
             "imgproc.cpp",
-            "objdetect.cpp",
             "persistence_filenode.cpp",
             "persistence_filestorage.cpp",
             "photo.cpp",
@@ -91,6 +111,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     translate_c.step.dependOn(&opencv_libs.step);
+    translate_c.addIncludePath(gocv_patched_dir);
     translate_c.addIncludePath(gocv_src_dir);
     translate_c.addIncludePath(gocv_contrib_dir);
     translate_c.addIncludePath(b.path(zig_src_dir));
@@ -174,6 +195,9 @@ const examples = [_]Example{
 
 const c_api_includes =
     \\#include <stdlib.h>
+    \\
+    \\// First, so the patched core.h wins over the original (include guard).
+    \\#include "core.h"
     \\
     \\#include "asyncarray.h"
     \\#include "aruco.h"
