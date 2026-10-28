@@ -18,7 +18,7 @@ const img_dir = "./libs/gocv/images/";
 const face_detect_filepath = img_dir ++ "face-detect.jpg";
 
 test "imgproc CLAHE" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
 
     var src = try Mat.init();
@@ -40,7 +40,7 @@ test "imgproc CLAHE" {
 }
 
 test "imgproc CLAHE WithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
 
     var src = try Mat.init();
@@ -77,31 +77,31 @@ test "imgproc approxPolyDP" {
     var contours = try imgproc.findContours(img, .external, .simple);
     defer contours.deinit();
 
-    var c0 = try contours.at(0);
-    var triangle_perimeter = imgproc.arcLength(c0, true);
+    const c0 = try contours.at(0);
+    const triangle_perimeter = imgproc.arcLength(c0, true);
     var trianle_contour = try imgproc.approxPolyDP(c0, 0.04 * triangle_perimeter, true);
     defer trianle_contour.deinit();
 
-    var expected_triangle_contour = [_]Point{
+    const expected_triangle_contour = [_]Point{
         Point.init(25, 25),
         Point.init(25, 75),
         Point.init(75, 50),
     };
 
     var actual_triangle_contour = try trianle_contour.toPoints(testing.allocator);
-    defer actual_triangle_contour.deinit();
+    defer actual_triangle_contour.deinit(testing.allocator);
 
     try testing.expectEqual(expected_triangle_contour.len, actual_triangle_contour.items.len);
     for (expected_triangle_contour, 0..) |expected_point, i| {
         try testing.expectEqual(expected_point, actual_triangle_contour.items[i]);
     }
 
-    var c1 = try contours.at(1);
-    var rectangle_perimeter = imgproc.arcLength(c1, true);
+    const c1 = try contours.at(1);
+    const rectangle_perimeter = imgproc.arcLength(c1, true);
     var rectangle_contour = try imgproc.approxPolyDP(c1, 0.04 * rectangle_perimeter, true);
     defer rectangle_contour.deinit();
 
-    var expected_rectangle_contour = [_]Point{
+    const expected_rectangle_contour = [_]Point{
         Point.init(125, 24),
         Point.init(124, 75),
         Point.init(175, 76),
@@ -109,7 +109,7 @@ test "imgproc approxPolyDP" {
     };
 
     var actual_rectangle_contour = try rectangle_contour.toPoints(testing.allocator);
-    defer actual_rectangle_contour.deinit();
+    defer actual_rectangle_contour.deinit(testing.allocator);
 
     try testing.expectEqual(expected_rectangle_contour.len, actual_rectangle_contour.items.len);
     for (expected_rectangle_contour, 0..) |expected_point, i| {
@@ -118,7 +118,7 @@ test "imgproc approxPolyDP" {
 }
 
 test "imgproc convexity" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -126,7 +126,7 @@ test "imgproc convexity" {
     defer res.deinit();
     try testing.expect(1 <= res.size());
 
-    var area = imgproc.contourArea(try res.at(0));
+    const area = imgproc.contourArea(try res.at(0));
     try testing.expectEqual(@as(f64, 127280), area);
 
     var hull = try Mat.init();
@@ -162,13 +162,13 @@ test "imgproc min enclosing circle" {
     const radius = res.radius;
     const point = res.point;
 
-    try testing.expect(@fabs(@as(f64, radius) - expected_radius) <= epsilon);
-    try testing.expect(@fabs(@as(f64, point.x) - expected_x) <= epsilon);
-    try testing.expect(@fabs(@as(f64, point.y) - expected_y) <= epsilon);
+    try testing.expect(@abs(@as(f64, radius) - expected_radius) <= epsilon);
+    try testing.expect(@abs(@as(f64, point.x) - expected_x) <= epsilon);
+    try testing.expect(@abs(@as(f64, point.y) - expected_y) <= epsilon);
 }
 
 test "imgproc cvtColor" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -183,7 +183,7 @@ test "imgproc cvtColor" {
 }
 
 test "imgproc bilateral filter" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -198,7 +198,7 @@ test "imgproc bilateral filter" {
 }
 
 test "imgproc blur" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -213,7 +213,7 @@ test "imgproc blur" {
 }
 
 test "imgproc sobel" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -228,7 +228,7 @@ test "imgproc sobel" {
 }
 
 test "imgproc spatialGradient" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -249,7 +249,7 @@ test "imgproc spatialGradient" {
 }
 
 test "imgproc boxfilter" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -264,7 +264,7 @@ test "imgproc boxfilter" {
 }
 
 test "imgproc sqBoxfilter" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -279,7 +279,7 @@ test "imgproc sqBoxfilter" {
 }
 
 test "imgproc dilate" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -297,7 +297,7 @@ test "imgproc dilate" {
 }
 
 test "imgproc dilateWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -315,7 +315,7 @@ test "imgproc dilateWithParams" {
 }
 
 test "imgproc distanceTransform" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -341,11 +341,11 @@ test "imgproc distanceTransform" {
 }
 
 test "imgproc matchTemplate" {
-    var img_scene = try imgcodecs.imRead(img_dir ++ "face.jpg", .gray_scale);
+    var img_scene = try imgcodecs.imRead(std.testing.io,img_dir ++ "face.jpg", .gray_scale);
     defer img_scene.deinit();
     try testing.expectEqual(false, img_scene.isEmpty());
 
-    var img_template = try imgcodecs.imRead(img_dir ++ "toy.jpg", .gray_scale);
+    var img_template = try imgcodecs.imRead(std.testing.io,img_dir ++ "toy.jpg", .gray_scale);
     defer img_template.deinit();
     try testing.expectEqual(false, img_template.isEmpty());
 
@@ -362,16 +362,16 @@ test "imgproc matchTemplate" {
 }
 
 test "imgproc moments" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
-    var result = imgproc.moments(img, true);
+    const result = imgproc.moments(img, true);
     _ = result;
 }
 
 test "imgproc pyrdown" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -380,12 +380,12 @@ test "imgproc pyrdown" {
 
     imgproc.pyrDown(img, &dst, Size.init(dst.cols(), dst.rows()), .{});
     try testing.expectEqual(false, dst.isEmpty());
-    try testing.expect(@fabs(@as(f64, @floatFromInt((img.cols() - 2 * dst.cols())))) < 2.0);
-    try testing.expect(@fabs(@as(f64, @floatFromInt((img.rows() - 2 * dst.rows())))) < 2.0);
+    try testing.expect(@abs(@as(f64, @floatFromInt((img.cols() - 2 * dst.cols())))) < 2.0);
+    try testing.expect(@abs(@as(f64, @floatFromInt((img.rows() - 2 * dst.rows())))) < 2.0);
 }
 
 test "imgproc pyrup" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -394,12 +394,12 @@ test "imgproc pyrup" {
 
     imgproc.pyrUp(img, &dst, Size.init(dst.cols(), dst.rows()), .{});
     try testing.expectEqual(false, dst.isEmpty());
-    try testing.expect(@fabs(@as(f64, @floatFromInt((2 * img.cols() - dst.cols())))) < 2.0);
-    try testing.expect(@fabs(@as(f64, @floatFromInt((2 * img.rows() - dst.rows())))) < 2.0);
+    try testing.expect(@abs(@as(f64, @floatFromInt((2 * img.cols() - dst.cols())))) < 2.0);
+    try testing.expect(@abs(@as(f64, @floatFromInt((2 * img.rows() - dst.rows())))) < 2.0);
 }
 
 test "imgproc boxPoints" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
 
     var thresh = try Mat.init();
@@ -417,8 +417,8 @@ test "imgproc boxPoints" {
 
     imgproc.convexHull(try contours.at(0), &hull, false, false);
 
-    var hull_points = std.ArrayList(Point).init(testing.allocator);
-    defer hull_points.deinit();
+    var hull_points: std.ArrayList(Point) = .empty;
+    defer hull_points.deinit(testing.allocator);
 
     {
         var i: usize = 0;
@@ -426,7 +426,7 @@ test "imgproc boxPoints" {
             var j: usize = 0;
             while (j < hull.rows()) : (j += 1) {
                 const p = hull.get(i32, j, i);
-                try hull_points.append(contour.at(p));
+                try hull_points.append(testing.allocator, contour.at(p));
             }
         }
     }
@@ -434,7 +434,7 @@ test "imgproc boxPoints" {
     var pvhp = try PointVector.initFromPoints(hull_points.items, testing.allocator);
     defer pvhp.deinit();
 
-    var rect = imgproc.minAreaRect(pvhp);
+    const rect = imgproc.minAreaRect(pvhp);
     var pts = try Mat.init();
     defer pts.deinit();
 
@@ -446,7 +446,7 @@ test "imgproc boxPoints" {
 }
 
 test "imgproc areaRect" {
-    comptime var src = [_]Point{
+    var src = [_]Point{
         Point.init(0, 2),
         Point.init(2, 0),
         Point.init(4, 2),
@@ -456,7 +456,7 @@ test "imgproc areaRect" {
     var pv = try PointVector.initFromPoints(src[0..], testing.allocator);
     defer pv.deinit();
 
-    var m = imgproc.minAreaRect(pv);
+    const m = imgproc.minAreaRect(pv);
 
     try testing.expectEqual(@as(i32, 2.0), m.center.x);
     try testing.expectEqual(@as(i32, 2.0), m.center.y);
@@ -464,7 +464,7 @@ test "imgproc areaRect" {
 }
 
 test "imgproc fitEllipse" {
-    comptime var src = [_]Point{
+    var src = [_]Point{
         Point.init(1, 1),
         Point.init(0, 1),
         Point.init(0, 2),
@@ -478,7 +478,7 @@ test "imgproc fitEllipse" {
     var pv = try PointVector.initFromPoints(src[0..], testing.allocator);
     defer pv.deinit();
 
-    var rect = imgproc.fitEllipse(pv);
+    const rect = imgproc.fitEllipse(pv);
 
     try testing.expectEqual(@as(i32, 2.0), rect.center.x);
     try testing.expectEqual(@as(i32, 2.0), rect.center.y);
@@ -486,7 +486,7 @@ test "imgproc fitEllipse" {
 }
 
 test "imgproc findContours" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -495,11 +495,11 @@ test "imgproc findContours" {
 
     try testing.expect(res.size() > 0);
 
-    var r0 = try res.at(0);
-    var area = imgproc.contourArea(r0);
+    const r0 = try res.at(0);
+    const area = imgproc.contourArea(r0);
     try testing.expectEqual(@as(f64, 127280.0), area);
 
-    var r = imgproc.boundingRect(r0);
+    const r = imgproc.boundingRect(r0);
     try testing.expectEqual(@as(i32, 0), r.x);
     try testing.expectEqual(@as(i32, 0), r.y);
     try testing.expectEqual(@as(i32, 400), r.width);
@@ -513,7 +513,7 @@ test "imgproc findContours" {
 }
 
 test "imgproc findContoursWithParams" {
-    var img = try imgcodecs.imRead(img_dir ++ "contours.png", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "contours.png", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -528,7 +528,7 @@ test "imgproc findContoursWithParams" {
 }
 
 test "imgproc polygonTest" {
-    comptime var tests = [_]struct {
+    const tests = [_]struct {
         name: []const u8, // name of the testcase
         thickness: i32, // thickness of the polygon
         point: Point, // point to be checked
@@ -542,7 +542,7 @@ test "imgproc polygonTest" {
         .{ .name = "On the polygon - measure=true", .thickness = 1, .point = Point.init(10, 10), .result = 0.0, .measure = true },
     };
 
-    comptime var pts = [_]Point{
+    var pts = [_]Point{
         Point.init(10, 10),
         Point.init(10, 80),
         Point.init(80, 80),
@@ -553,7 +553,7 @@ test "imgproc polygonTest" {
     defer ctr.deinit();
 
     for (tests) |t| {
-        var result = imgproc.pointPolygonTest(ctr, t.point, t.measure);
+        const result = imgproc.pointPolygonTest(ctr, t.point, t.measure);
         testing.expectEqual(t.result, result) catch |e| {
             std.debug.print("Testcase: {s}\n", .{t.name});
             return e;
@@ -562,33 +562,33 @@ test "imgproc polygonTest" {
 }
 
 test "imgproc connectedComponents" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
     var labels = try Mat.init();
     defer labels.deinit();
 
-    var res = imgproc.connectedComponents(img, &labels);
+    const res = imgproc.connectedComponents(img, &labels);
     try testing.expect(res > 0);
     try testing.expectEqual(false, labels.isEmpty());
 }
 
 test "imgproc connectedComponentsWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
     var labels = try Mat.init();
     defer labels.deinit();
 
-    var res = imgproc.connectedComponentsWithParams(img, &labels, 8, .cv32sc1, .default);
+    const res = imgproc.connectedComponentsWithParams(img, &labels, 8, .cv32sc1, .default);
     try testing.expect(res > 0);
     try testing.expectEqual(false, labels.isEmpty());
 }
 
 test "imgproc connectedComponentsWithStats" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -601,7 +601,7 @@ test "imgproc connectedComponentsWithStats" {
     var centroids = try Mat.init();
     defer centroids.deinit();
 
-    var res = imgproc.connectedComponentsWithStats(img, &labels, &stats, &centroids);
+    const res = imgproc.connectedComponentsWithStats(img, &labels, &stats, &centroids);
     try testing.expect(res > 0);
     try testing.expectEqual(false, labels.isEmpty());
     try testing.expectEqual(false, stats.isEmpty());
@@ -609,7 +609,7 @@ test "imgproc connectedComponentsWithStats" {
 }
 
 test "imgproc connectedComponentsWithStatsWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -622,7 +622,7 @@ test "imgproc connectedComponentsWithStatsWithParams" {
     var centroids = try Mat.init();
     defer centroids.deinit();
 
-    var res = imgproc.connectedComponentsWithStatsWithParams(img, &labels, &stats, &centroids, 8, .cv32sc1, .default);
+    const res = imgproc.connectedComponentsWithStatsWithParams(img, &labels, &stats, &centroids, 8, .cv32sc1, .default);
     try testing.expect(res > 0);
     try testing.expectEqual(false, labels.isEmpty());
     try testing.expectEqual(false, stats.isEmpty());
@@ -630,7 +630,7 @@ test "imgproc connectedComponentsWithStatsWithParams" {
 }
 
 test "imgproc erode" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -647,7 +647,7 @@ test "imgproc erode" {
 }
 
 test "imgproc erodeWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -671,7 +671,7 @@ test "imgproc morphologyDefaultBorderValue" {
 }
 
 test "imgproc morphologyEx" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -688,7 +688,7 @@ test "imgproc morphologyEx" {
 }
 
 test "imgproc morphologyExWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -705,7 +705,7 @@ test "imgproc morphologyExWithParams" {
 }
 
 test "imgproc gaussianBlur" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -731,7 +731,7 @@ test "imgproc getGaussianKernelWithParams" {
 }
 
 test "imgproc laplacian" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -745,7 +745,7 @@ test "imgproc laplacian" {
 }
 
 test "imgproc scharr" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -759,7 +759,7 @@ test "imgproc scharr" {
 }
 
 test "imgproc medianBlur" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -773,7 +773,7 @@ test "imgproc medianBlur" {
 }
 
 test "imgproc canny" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -787,7 +787,7 @@ test "imgproc canny" {
 }
 
 test "imgproc goodFeaturesToTrack & CornerSubPix" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
 
     var corners = try Mat.init();
@@ -814,7 +814,7 @@ test "imgproc goodFeaturesToTrack & CornerSubPix" {
 }
 
 test "imgproc grabcut" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -831,7 +831,7 @@ test "imgproc grabcut" {
     var fgd_model = try Mat.init();
     defer fgd_model.deinit();
 
-    var r = Rect.init(0, 0, 50, 50);
+    const r = Rect.init(0, 0, 50, 50);
 
     imgproc.grabCut(src, &mask, r, &bgd_model, &fgd_model, 1, .eval);
     try testing.expectEqual(false, bgd_model.isEmpty());
@@ -839,7 +839,7 @@ test "imgproc grabcut" {
 }
 
 test "imgproc houghCircles" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -853,7 +853,7 @@ test "imgproc houghCircles" {
 }
 
 test "imgproc HoughCirclesWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -868,7 +868,7 @@ test "imgproc HoughCirclesWithParams" {
 }
 
 test "imgproc houghLines" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -895,7 +895,7 @@ test "imgproc houghLines" {
 }
 
 test "imgproc houghLinesP" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -930,7 +930,7 @@ test "imgproc houghLinesP" {
 }
 
 test "imgproc houghLinesPWithParams" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -965,7 +965,7 @@ test "imgproc houghLinesPWithParams" {
 }
 
 test "imgproc houghLinesPointSet" {
-    comptime var points = [_][2]f32{
+    const points = [_][2]f32{
         .{ 0, 369 },   .{ 10, 364 },  .{ 20, 358 },  .{ 30, 352 },
         .{ 40, 346 },  .{ 50, 341 },  .{ 60, 335 },  .{ 70, 329 },
         .{ 80, 323 },  .{ 90, 318 },  .{ 100, 312 }, .{ 110, 306 },
@@ -1025,7 +1025,7 @@ test "imgproc houghLinesPointSet" {
 }
 
 test "imgproc integral" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1043,7 +1043,7 @@ test "imgproc integral" {
 }
 
 test "imgproc threshold" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .color);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1057,7 +1057,7 @@ test "imgproc threshold" {
 }
 
 test "imgproc adaptiveThreshold" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1071,7 +1071,7 @@ test "imgproc adaptiveThreshold" {
 }
 
 test "imgproc circle" {
-    var tests = [_]struct {
+    const tests = [_]struct {
         thickness: i32,
         point: Point,
         result: u8,
@@ -1097,7 +1097,7 @@ test "imgproc circle" {
 }
 
 test "imgproc circleWithParams" {
-    var tests = [_]struct {
+    const tests = [_]struct {
         thickness: i32,
         shift: i32,
         point: Point,
@@ -1138,7 +1138,7 @@ test "imgproc circleWithParams" {
 }
 
 test "imgproc rectangle" {
-    var tests = [_]struct {
+    const tests = [_]struct {
         thickness: i32,
         point: Point,
     }{
@@ -1161,7 +1161,7 @@ test "imgproc rectangle" {
 }
 
 test "imgproc rectangleWithParams" {
-    var tests = [_]struct {
+    const tests = [_]struct {
         thickness: i32,
         shift: i32,
         point: Point,
@@ -1192,7 +1192,7 @@ test "imgproc rectangleWithParams" {
 }
 
 test "imgproc equlizeHist" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1206,7 +1206,7 @@ test "imgproc equlizeHist" {
 }
 
 test "imgproc calcHist" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1216,9 +1216,9 @@ test "imgproc calcHist" {
     var mask = try Mat.init();
     defer mask.deinit();
     var m = [1]Mat{img};
-    comptime var chans = [1]i32{0};
-    comptime var size = [1]i32{256};
-    comptime var rng = [2]f32{ 0.0, 256.0 };
+    var chans = [1]i32{0};
+    var size = [1]i32{256};
+    var rng = [2]f32{ 0.0, 256.0 };
     try imgproc.calcHist(&m, &chans, mask, &dst, &size, &rng, false);
     try testing.expectEqual(false, dst.isEmpty());
     try testing.expectEqual(@as(i32, 256), dst.rows());
@@ -1226,7 +1226,7 @@ test "imgproc calcHist" {
 }
 
 test "imgproc compareHist" {
-    var img = try imgcodecs.imRead(face_detect_filepath, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,face_detect_filepath, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -1240,15 +1240,15 @@ test "imgproc compareHist" {
     defer mask.deinit();
 
     var m = [1]Mat{img};
-    comptime var chans = [1]i32{0};
-    comptime var size = [1]i32{256};
-    comptime var rng = [2]f32{ 0.0, 256.0 };
+    var chans = [1]i32{0};
+    var size = [1]i32{256};
+    var rng = [2]f32{ 0.0, 256.0 };
     try imgproc.calcHist(&m, &chans, mask, &hist1, &size, &rng, false);
     try testing.expectEqual(false, hist1.isEmpty());
     try imgproc.calcHist(&m, &chans, mask, &hist2, &size, &rng, false);
     try testing.expectEqual(false, hist2.isEmpty());
 
-    var dist = imgproc.compareHist(hist1, hist2, .correl);
+    const dist = imgproc.compareHist(hist1, hist2, .correl);
     try testing.expectEqual(@as(f64, 1), dist);
 }
 
@@ -1300,7 +1300,7 @@ test "imgproc putTextWithParams" {
 }
 
 test "imgproc resize" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try Mat.init();
@@ -1318,7 +1318,7 @@ test "imgproc resize" {
 }
 
 test "imgproc getRectSubPix" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try Mat.init();
@@ -1336,7 +1336,7 @@ test "imgprc getRotationMatrix2D" {
         angle: f64,
         scale: f64,
     };
-    var tests = [_]struct {
+    const tests = [_]struct {
         args: args,
         want: [2][3]f64,
     }{
@@ -1393,7 +1393,7 @@ test "imgproc wrapaffine" {
 
     imgproc.warpAffine(src, &dst, rot, Size.init(256, 256));
 
-    var result = dst.norm(.l2);
+    const result = dst.norm(.l2);
     try testing.expectEqual(@as(f64, 0), result);
 }
 
@@ -1415,20 +1415,20 @@ test "imgproc wrapaffineWithParams" {
         Color{},
     );
 
-    var result = dst.norm(.l2);
+    const result = dst.norm(.l2);
     try testing.expectEqual(@as(f64, 0), result);
 }
 
 test "imgproc clipLine" {
-    var pt1 = Point.init(5, 5);
-    var pt2 = Point.init(5, 5);
-    var rect = Size.init(20, 20);
-    var ok = imgproc.clipLine(rect, pt1, pt2);
+    const pt1 = Point.init(5, 5);
+    const pt2 = Point.init(5, 5);
+    const rect = Size.init(20, 20);
+    const ok = imgproc.clipLine(rect, pt1, pt2);
     try testing.expectEqual(true, ok);
 }
 
 test "imgproc watershed" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer src.deinit();
 
     var gray = try Mat.init();
@@ -1471,20 +1471,20 @@ test "imgproc applyColorMap" {
         .{ .colormap = .parula, .want = 111483.33555738274 },
     };
 
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .gray_scale);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .gray_scale);
     defer src.deinit();
 
     for (tests) |tt| {
         var dst = try src.clone();
         defer dst.deinit();
         imgproc.applyColorMap(src, &dst, tt.colormap);
-        var result = dst.norm(.l2);
+        const result = dst.norm(.l2);
         try testing.expectEqual(tt.want, result);
     }
 }
 
 test "imgproc applyCustomColorMap" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .gray_scale);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .gray_scale);
     defer src.deinit();
 
     var applyCustomColorMap = try Mat.initSize(256, 1, .cv8uc1);
@@ -1493,7 +1493,7 @@ test "imgproc applyCustomColorMap" {
     var dst = try src.clone();
     defer dst.deinit();
     imgproc.applyCustomColorMap(src, &dst, applyCustomColorMap);
-    var result = dst.norm(.l2);
+    const result = dst.norm(.l2);
     try testing.expectEqual(@as(f64, 0), result);
 }
 
@@ -1648,8 +1648,8 @@ test "imgproc findHomography" {
         while (row < 3) : (row += 1) {
             var col: usize = 0;
             while (col < 3) : (col += 1) {
-                if (@fabs(m.get(f64, row, col) - m2.get(f64, row, col)) > 0.002) {
-                    try testing.expectEqual(@as(f64, 0), @fabs((m.get(f64, row, col) - m2.get(f64, row, col))));
+                if (@abs(m.get(f64, row, col) - m2.get(f64, row, col)) > 0.002) {
+                    try testing.expectEqual(@as(f64, 0), @abs((m.get(f64, row, col) - m2.get(f64, row, col))));
                 }
             }
         }
@@ -1657,11 +1657,11 @@ test "imgproc findHomography" {
 }
 
 test "imgproc warpPerspective" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer img.deinit();
 
-    var w = img.cols();
-    var h = img.rows();
+    const w = img.cols();
+    const h = img.rows();
 
     var s = [_]Point{
         Point.init(0, 0),
@@ -1696,12 +1696,12 @@ test "imgproc warpPerspective" {
 }
 
 test "imgproc wrapPerspectiveWithParams" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
-    var w = img.cols();
-    var h = img.rows();
+    const w = img.cols();
+    const h = img.rows();
 
     var s = [_]Point{
         Point.init(0, 0),
@@ -1740,7 +1740,7 @@ test "imgproc drawContours" {
     defer img.deinit();
 
     // Draw rectangle
-    var white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+    const white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
     imgproc.rectangle(&img, Rect.init(125, 25, 175, 75), white, 1);
 
     var contours = try imgproc.findContours(img, .external, .simple);
@@ -1761,8 +1761,8 @@ test "imgproc drawContoursWithParams" {
     defer img.deinit();
 
     // Draw circle
-    var white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
-    var black = Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+    const white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+    const black = Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
     imgproc.circle(&img, Point.init(100, 100), 80, white, -1);
     imgproc.circle(&img, Point.init(100, 100), 55, black, -1);
     imgproc.circle(&img, Point.init(100, 100), 30, white, -1);
@@ -1824,7 +1824,7 @@ test "imgproc ellipse" {
         var img = try Mat.initSize(100, 100, .cv8uc1);
         defer img.deinit();
 
-        var white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+        const white = Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
         imgproc.ellipse(&img, Point.init(50, 50), Point.init(25, 25), 0, 0, 360, white, tc.thickness);
 
         try testing.expectEqual(@as(u8, 255), img.get(u8, @as(usize, @intCast(tc.point.x)), @as(usize, @intCast(tc.point.y))));
@@ -1880,7 +1880,7 @@ test "imgproc ellipseWithParams" {
         var img = try Mat.initSize(100, 100, .cv8uc1);
         defer img.deinit();
 
-        var white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+        const white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
         imgproc.ellipseWithParams(
             &img,
             Point.init(50, 50),
@@ -1911,7 +1911,7 @@ test "imgproc fillPoly" {
     var img = try Mat.initSize(100, 100, .cv8uc1);
     defer img.deinit();
 
-    var white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+    const white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
     var pts = [_][4]Point{
         .{
             .{ .x = 10, .y = 10 },
@@ -1949,7 +1949,7 @@ test "imgproc fillPolyWithParams" {
         },
     };
 
-    var white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+    const white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
     var pts = [_][4]Point{
         .{
             .{ .x = 10, .y = 10 },
@@ -1975,7 +1975,7 @@ test "imgproc polylines" {
     var img = try Mat.initSize(100, 100, .cv8uc1);
     defer img.deinit();
 
-    var white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
+    const white = Color{ .r = 255, .g = 255, .b = 255, .a = 0 };
     var pts = [_][4]Point{
         .{
             .{ .x = 10, .y = 10 },
@@ -1993,7 +1993,7 @@ test "imgproc polylines" {
 }
 
 test "imgproc remap" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try Mat.init();
@@ -2011,7 +2011,7 @@ test "imgproc remap" {
 }
 
 test "imgproc filter2D" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try img.clone();
@@ -2025,7 +2025,7 @@ test "imgproc filter2D" {
 }
 
 test "imgproc sepFilter2D" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try img.clone();
@@ -2041,7 +2041,7 @@ test "imgproc sepFilter2D" {
 }
 
 test "imgproc logPolar" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try img.clone();
@@ -2052,7 +2052,7 @@ test "imgproc logPolar" {
 }
 
 test "imgproc linearPolar" {
-    var img = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .color);
     defer img.deinit();
 
     var dst = try img.clone();
@@ -2091,13 +2091,13 @@ test "imgproc invertAffineTransform" {
 }
 
 test "imgproc phaseCorrelate" {
-    var template = try imgcodecs.imRead(img_dir ++ "simple.jpg", .gray_scale);
+    var template = try imgcodecs.imRead(std.testing.io,img_dir ++ "simple.jpg", .gray_scale);
     defer template.deinit();
 
-    var matched = try imgcodecs.imRead(img_dir ++ "simple-translated.jpg", .gray_scale);
+    var matched = try imgcodecs.imRead(std.testing.io,img_dir ++ "simple-translated.jpg", .gray_scale);
     defer matched.deinit();
 
-    var notMatchedOrig = try imgcodecs.imRead(img_dir ++ "space_shuttle.jpg", .gray_scale);
+    var notMatchedOrig = try imgcodecs.imRead(std.testing.io,img_dir ++ "space_shuttle.jpg", .gray_scale);
     defer notMatchedOrig.deinit();
 
     var notMatched = try Mat.init();
@@ -2119,20 +2119,20 @@ test "imgproc phaseCorrelate" {
     var window = try Mat.init();
     defer window.deinit();
 
-    var shiftTranslated = imgproc.phaseCorrelate(template32FC1, matched32FC1, window);
-    var responseTranslated = imgproc.phaseCorrelate(template32FC1, matched32FC1, window);
+    const shiftTranslated = imgproc.phaseCorrelate(template32FC1, matched32FC1, window);
+    const responseTranslated = imgproc.phaseCorrelate(template32FC1, matched32FC1, window);
 
     try testing.expect(shiftTranslated.point.x < 15);
     try testing.expect(shiftTranslated.point.y < 15);
 
     try testing.expect(responseTranslated.response > 0.85);
 
-    var responseDifferent = imgproc.phaseCorrelate(template32FC1, notMatched32FC1, window);
+    const responseDifferent = imgproc.phaseCorrelate(template32FC1, notMatched32FC1, window);
     try testing.expect(responseDifferent.response < 0.05);
 }
 
 test "imgproc accumulate" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.rows(), src.cols(), .cv64fc3);
@@ -2143,7 +2143,7 @@ test "imgproc accumulate" {
 }
 
 test "imgproc AccumulateWithMask" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.rows(), src.cols(), .cv64fc3);
@@ -2157,7 +2157,7 @@ test "imgproc AccumulateWithMask" {
 }
 
 test "imgproc accumulateSquare" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.rows(), src.cols(), .cv64fc3);
@@ -2168,7 +2168,7 @@ test "imgproc accumulateSquare" {
 }
 
 test "imgproc AccumulateSquareWithMask" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.rows(), src.cols(), .cv64fc3);
@@ -2182,7 +2182,7 @@ test "imgproc AccumulateSquareWithMask" {
 }
 
 test "imgproc AccumulateProduct" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var src2 = try src.clone();
@@ -2196,7 +2196,7 @@ test "imgproc AccumulateProduct" {
 }
 
 test "imgproc AccumulateProductWithMask" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var src2 = try src.clone();
@@ -2213,7 +2213,7 @@ test "imgproc AccumulateProductWithMask" {
 }
 
 test "imgproc AccumulatedWeighted" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.size()[0], src.size()[1], .cv64fc3);
@@ -2224,7 +2224,7 @@ test "imgproc AccumulatedWeighted" {
 }
 
 test "imgproc AccumulatedWeightedWithMask" {
-    var src = try imgcodecs.imRead(img_dir ++ "gocvlogo.jpg", .unchanged);
+    var src = try imgcodecs.imRead(std.testing.io,img_dir ++ "gocvlogo.jpg", .unchanged);
     defer src.deinit();
 
     var dst = try Mat.initSize(src.size()[0], src.size()[1], .cv64fc3);
