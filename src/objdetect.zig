@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
@@ -298,8 +298,8 @@ pub const QRCodeDetector = struct {
             &c_qr_codes,
         );
 
-        var decoded = try arena_allocator.alloc([]const u8, @as(usize, @intCast(c_decoded.length)));
-        var qr_codes = try arena_allocator.alloc(Mat, @as(usize, @intCast(c_qr_codes.length)));
+        const decoded = try arena_allocator.alloc([]const u8, @as(usize, @intCast(c_decoded.length)));
+        const qr_codes = try arena_allocator.alloc(Mat, @as(usize, @intCast(c_qr_codes.length)));
 
         if (result) {
             for (decoded, 0..) |*item, i| {
@@ -324,7 +324,7 @@ pub const QRCodeDetector = struct {
 const testing = std.testing;
 const imgcodecs = @import("imgcodecs.zig");
 test "objdetect CascadeClassifier" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -334,13 +334,13 @@ test "objdetect CascadeClassifier" {
     try classifier.load("./libs/gocv/data/haarcascade_frontalface_default.xml");
 
     var rects = try classifier.detectMultiScale(img, testing.allocator);
-    defer rects.deinit();
+    defer rects.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 1), rects.items.len);
 }
 
 test "objdetect CascadeClassifierWithParams" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -350,13 +350,13 @@ test "objdetect CascadeClassifierWithParams" {
     try classifier.load("libs/gocv/data/haarcascade_frontalface_default.xml");
 
     var rects = try classifier.detectMultiScaleWithParams(img, 1.1, 3, 0, Size.init(0, 0), Size.init(0, 0), testing.allocator);
-    defer rects.deinit();
+    defer rects.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 1), rects.items.len);
 }
 
 test "objdetect HOGDescriptor" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -368,13 +368,13 @@ test "objdetect HOGDescriptor" {
     hog.setSVMDetector(d);
 
     var rects = try hog.detectMultiScale(img, testing.allocator);
-    defer rects.deinit();
+    defer rects.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 1), rects.items.len);
 }
 
 test "objdetect HOGDescriptorWithParams" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -395,7 +395,7 @@ test "objdetect HOGDescriptorWithParams" {
         false,
         testing.allocator,
     );
-    defer rects.deinit();
+    defer rects.deinit(testing.allocator);
 
     try testing.expectEqual(@as(usize, 1), rects.items.len);
 }
@@ -425,12 +425,12 @@ test "objdetect groupRectangles" {
     };
 
     var results = try groupRectangles(rects[0..], 1, 0.1, testing.allocator);
-    defer results.deinit();
+    defer results.deinit(testing.allocator);
     try testing.expectEqual(@as(usize, 2), results.items.len);
 }
 
 test "objdetect QRCodeDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/qrcode.png", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/qrcode.png", .color);
     try testing.expectEqual(false, img.isEmpty());
     defer img.deinit();
 
@@ -442,7 +442,7 @@ test "objdetect QRCodeDetector" {
     var qr = try Mat.init();
     defer qr.deinit();
 
-    var res = detector.detect(img, &bbox);
+    const res = detector.detect(img, &bbox);
     try testing.expectEqual(true, res);
 
     const res2 = detector.decode(img, bbox, &qr);
@@ -452,7 +452,7 @@ test "objdetect QRCodeDetector" {
 }
 
 test "objdetect Multi QRCodeDetector" {
-    var img = try imgcodecs.imRead("libs/gocv/images/multi_qrcodes.png", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/multi_qrcodes.png", .color);
     try testing.expectEqual(false, img.isEmpty());
     defer img.deinit();
 
@@ -464,7 +464,7 @@ test "objdetect Multi QRCodeDetector" {
     var qr = try Mat.init();
     defer qr.deinit();
 
-    var res = detector.detectMulti(img, &mbox);
+    const res = detector.detectMulti(img, &mbox);
     try testing.expectEqual(true, res);
     try testing.expectEqual(@as(i32, 2), mbox.rows());
 
