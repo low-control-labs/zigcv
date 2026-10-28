@@ -2,13 +2,13 @@ const std = @import("std");
 const cv = @import("zigcv");
 const cv_c_api = cv.c_api;
 
-pub fn main() anyerror!void {
-    var allocator = std.heap.page_allocator;
-    var args = try std.process.argsWithAllocator(allocator);
+pub fn main(init: std.process.Init.Minimal) anyerror!void {
+    const allocator = std.heap.page_allocator;
+    var args = try init.args.iterateAllocator(allocator);
     const prog = args.next();
     const device_id_char = args.next() orelse {
         std.log.err("usage: {s} [cameraID]", .{prog.?});
-        std.os.exit(1);
+        std.process.exit(1);
     };
     args.deinit();
 
@@ -34,20 +34,20 @@ pub fn main() anyerror!void {
 
     classifier.load("./libs/gocv/data/haarcascade_frontalface_default.xml") catch {
         std.debug.print("no xml", .{});
-        std.os.exit(1);
+        std.process.exit(1);
     };
 
     const blue = cv.Color{ .b = 255 };
     while (true) {
         webcam.read(&img) catch {
             std.debug.print("capture failed", .{});
-            std.os.exit(1);
+            std.process.exit(1);
         };
         if (img.isEmpty()) {
             continue;
         }
-        const rects = try classifier.detectMultiScale(img, allocator);
-        defer rects.deinit();
+        var rects = try classifier.detectMultiScale(img, allocator);
+        defer rects.deinit(allocator);
         const found_num = rects.items.len;
         std.debug.print("found {d} faces\n", .{found_num});
         for (rects.items) |r| {
