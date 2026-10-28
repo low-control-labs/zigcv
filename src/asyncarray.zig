@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
@@ -12,7 +12,7 @@ pub const AsyncArray = struct {
     const Self = @This();
 
     pub fn init() !Self {
-        var ptr = c.AsyncArray_New();
+        const ptr = c.AsyncArray_New();
         return try Self.initFromC(ptr);
     }
 
