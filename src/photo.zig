@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
@@ -75,7 +75,7 @@ pub fn fastNlMeansDenoisingColoredMulti(
     img_to_denoise_index: i32,
     temporal_window_size: i32,
 ) !void {
-    var c_mats = try Mat.toCStructs(src);
+    const c_mats = try Mat.toCStructs(src);
     defer Mat.deinitCStructs(c_mats);
     _ = c.FastNlMeansDenoisingColoredMulti(c_mats, dst.*.ptr, img_to_denoise_index, temporal_window_size);
 }
@@ -95,7 +95,7 @@ pub fn fastNlMeansDenoisingColoredMultiWithParams(
     template_window_size: i32,
     search_window_size: i32,
 ) !void {
-    var c_mats = try Mat.toCStructs(src);
+    const c_mats = try Mat.toCStructs(src);
     defer Mat.deinitCStructs(c_mats);
     _ = c.FastNlMeansDenoisingColoredMultiWithParams(
         c_mats,
@@ -225,7 +225,7 @@ pub const MergeMertens = struct {
     /// https://docs.opencv.org/master/d7/dd6/classcv_1_1MergeMertens.html#a2d2254b2aab722c16954de13a663644d
     ///
     pub fn process(self: *Self, src: []const Mat, dst: *Mat) !void {
-        var c_mats: c.struct_Mats = try Mat.toCStructs(src);
+        const c_mats: c.struct_Mats = try Mat.toCStructs(src);
         defer Mat.deinitCStructs(c_mats);
         _ = c.MergeMertens_Process(self.ptr, c_mats, dst.*.ptr);
     }
@@ -283,7 +283,7 @@ pub const AlignMTB = struct {
     /// https://docs.opencv.org/master/d7/db6/classcv_1_1AlignMTB.html#a37b3417d844f362d781f34155cbcb201
     ///
     pub fn process(self: Self, src: []const Mat, allocator: std.mem.Allocator) !Mats {
-        var c_mats: c.struct_Mats = try Mat.toCStructs(src);
+        const c_mats: c.struct_Mats = try Mat.toCStructs(src);
         defer Mat.deinitCStructs(c_mats);
         var c_dst_mats: c.struct_Mats = undefined;
         _ = c.AlignMTB_Process(self.ptr, c_mats, &c_dst_mats);
@@ -308,16 +308,6 @@ pub fn detailEnhance(src: Mat, dst: *Mat, sigma_s: f32, sigma_r: f32) void {
 ///
 pub fn edgePreservingFilter(src: Mat, dst: *Mat, flags: EdgeFilter, sigma_s: f32, sigma_r: f32) void {
     _ = c.EdgePreservingFilter(src.ptr, dst.*.ptr, @intFromEnum(flags), sigma_s, sigma_r);
-}
-
-/// EdgePreservingFilter filtering is the fundamental operation in image and video processing.
-/// Edge-preserving smoothing filters are used in many different applications.
-///
-/// For further details, please see:
-/// https://docs.opencv.org/4.x/df/dac/group__photo__render.html#gafaee2977597029bc8e35da6e67bd31f7
-///
-pub fn edgePreservingFilterWithKernel(src: Mat, dst: *Mat, kernel: Mat) void {
-    _ = c.EdgePreservingFilterWithKernel(src.ptr, dst.*.ptr, kernel.ptr);
 }
 
 /// PencilSketch pencil-like non-photorealistic line drawing.
@@ -373,7 +363,7 @@ test "photo seamlessClone" {
     var blend = try Mat.initSize(dst.rows(), dst.cols(), dst.getType());
     defer blend.deinit();
 
-    var center = Point.init(@divExact(dst.rows(), 2), @divExact(dst.cols(), 2));
+    const center = Point.init(@divExact(dst.rows(), 2), @divExact(dst.cols(), 2));
     seamlessClone(src, &dst, mask, center, blend, .normal_clone);
 
     try testing.expectEqual(false, blend.isEmpty());
@@ -474,7 +464,7 @@ test "photo AlignMTB" {
     defer align_mtb.deinit();
 
     var dst = try align_mtb.process(src[0..], testing.allocator);
-    defer dst.deinit();
+    defer dst.deinit(testing.allocator);
 
     try testing.expect(dst.list.items.len > 0);
 
@@ -485,7 +475,7 @@ test "photo AlignMTB" {
 }
 
 test "photo fastNlMeansDenoising" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face-detect.jpg", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -500,7 +490,7 @@ test "photo fastNlMeansDenoising" {
 }
 
 test "photo FastNlMeansDenoisingColoredMultiWithParams" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face-detect.jpg", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -515,7 +505,7 @@ test "photo FastNlMeansDenoisingColoredMultiWithParams" {
 }
 
 test "photo fastNlMeansDenoisingColored" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face-detect.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -530,7 +520,7 @@ test "photo fastNlMeansDenoisingColored" {
 }
 
 test "photo fastNlMeansDenoisingColoredWithParams" {
-    var img = try imgcodecs.imRead("libs/gocv/images/face-detect.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
