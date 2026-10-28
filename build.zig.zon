@@ -1,0 +1,61 @@
+.{
+    .name = .zigcv,
+    .fingerprint = 0x8940863235fe9d5d,
+    // This is a [Semantic Version](https://semver.org/).
+    // In a future version of Zig it will be used for package deduplication.
+    .version = "0.1.0",
+
+    // This field is optional.
+    // This is currently advisory only; Zig does not yet do anything
+    // with this value.
+    .minimum_zig_version = "0.17.0",
+
+    // This field is optional.
+    // Each dependency must either provide a `url` and `hash`, or a `path`.
+    // `zig build --fetch` can be used to fetch all dependencies of a package, recursively.
+    // Once all dependencies are fetched, `zig build` no longer requires
+    // internet connectivity.
+    .dependencies = .{
+        .gocv = .{
+            .url = "git+https://github.com/hybridgroup/gocv#v0.40.0",
+            .hash = "N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49",
+        },
+        .opencv = .{
+            .url = "git+https://github.com/opencv/opencv#4.11.0",
+            .hash = "N-V-__8AAKGLFQwgIQ-B1jFpXN6TQONXx-BfYXRIxATyH-xQ",
+        },
+        .opencv_contrib = .{
+            .url = "git+https://github.com/opencv/opencv_contrib#4.11.0",
+            .hash = "N-V-__8AAGNW8AW7mm9lzl8Pm1dsoChXkjGrMzUJycbZuGVJ",
+        },
+        // Header-only; OpenCV gets EIGEN_INCLUDE_PATH pointed at the repo root.
+        .eigen = .{
+            .url = "git+https://gitlab.com/libeigen/eigen#3.4.0",
+            .hash = "N-V-__8AABPI6wAbBLaww8cKO-HchZ0ft-BxUOEOyQtTSccD",
+        },
+        // Threading backend for OpenCV's parallel_for_.
+        .onetbb = .{
+            .url = "git+https://github.com/uxlfoundation/oneTBB#v2022.1.0",
+            .hash = "N-V-__8AAFQnvQBKoHrDaI4Q2U3m0XpBphAt_U1PQ3Tdv5of",
+        },
+        // BLAS + LAPACK (C_LAPACK, no Fortran needed).
+        .openblas = .{
+            .url = "git+https://github.com/OpenMathLib/OpenBLAS#v0.3.29",
+            .hash = "N-V-__8AAJDq2ArxA3D3ZNmp4y-Up3s7BzoPp_EXTA0xL7KN",
+        },
+    },
+    .paths = .{
+        // This makes *all* files, recursively, included in this package. It is generally
+        // "",
+        // better to explicitly list the files and directories instead, to insure that
+        // fetching from tarballs, file system paths, and version control all result
+        // in the same contents hash.
+        // For example...
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "logo",
+        "LICENSE",
+        "README.md",
+    },
+}
