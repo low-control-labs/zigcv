@@ -1,13 +1,13 @@
 const std = @import("std");
 const cv = @import("zigcv");
 
-pub fn main() anyerror!void {
-    var allocator = std.heap.page_allocator;
-    var args = try std.process.argsWithAllocator(allocator);
+pub fn main(init: std.process.Init.Minimal) anyerror!void {
+    const allocator = std.heap.page_allocator;
+    var args = try init.args.iterateAllocator(allocator);
     const prog = args.next();
     const device_id_char = args.next() orelse {
         std.log.err("usage: {s} [cameraID]", .{prog.?});
-        std.os.exit(1);
+        std.process.exit(1);
     };
     args.deinit();
 
