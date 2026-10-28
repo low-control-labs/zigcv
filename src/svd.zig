@@ -1,4 +1,4 @@
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const Mat = core.Mat;
 
