@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 
 /// Return OpenCV version as a string.
 pub fn openCVVersion() []const u8 {
@@ -13,14 +13,14 @@ test "show version" {
 
     const version = openCVVersion();
 
-    const actual_version = (std.ChildProcess.exec(.{
-        .allocator = allocator,
+    const result = std.process.run(allocator, testing.io, .{
         .argv = &.{ "pkg-config", "--modversion", "opencv4" },
     }) catch {
         return;
-    }).stdout;
-
-    defer allocator.free(actual_version);
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+    const actual_version = result.stdout;
 
     try testing.expectEqual(parseFloat(f32, actual_version), parseFloat(f32, version));
 }
