@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
@@ -285,15 +285,15 @@ pub const Tracker = struct {
         const T = @TypeOf(object);
         const T_info = @typeInfo(T);
 
-        if (T_info != .Pointer) @compileError("ptr must be a pointer");
-        if (T_info.Pointer.size != .One) @compileError("ptr must be a single item pointer");
-        if (!@hasDecl(T_info.Pointer.child, "init")) @compileError("object must have an init function");
-        if (!@hasDecl(T_info.Pointer.child, "deinit")) @compileError("object must have a deinit function");
+        if (T_info != .pointer) @compileError("ptr must be a pointer");
+        if (T_info.pointer.size != .one) @compileError("ptr must be a single item pointer");
+        if (!@hasDecl(T_info.pointer.child, "init")) @compileError("object must have an init function");
+        if (!@hasDecl(T_info.pointer.child, "deinit")) @compileError("object must have a deinit function");
 
         const gen = struct {
             pub fn deinit(self: *Self) void {
                 assert(self.ptr != null);
-                T_info.Pointer.child.deinit(self.ptr);
+                T_info.pointer.child.deinit(self.ptr);
                 self.ptr = null;
             }
 
@@ -304,7 +304,7 @@ pub const Tracker = struct {
             pub fn update(self: *Self, image: Mat) UpdateReturn {
                 var c_box: c.Rect = undefined;
                 const success = c.Tracker_Update(self.ptr, image.toC(), @ptrCast(&c_box));
-                var rect = Rect.initFromC(c_box);
+                const rect = Rect.initFromC(c_box);
                 return UpdateReturn{
                     .box = rect,
                     .success = success,
@@ -312,7 +312,7 @@ pub const Tracker = struct {
             }
         };
 
-        const t_ptr = try T_info.Pointer.child.init();
+        const t_ptr = try T_info.pointer.child.init();
 
         return .{
             .ptr = t_ptr,
@@ -357,12 +357,12 @@ pub const Tracker = struct {
 pub const TrackerMIL = struct {
     const Self = @This();
 
-    fn init() !c.TrackerMIL {
+    pub fn init() !c.TrackerMIL {
         const p = c.TrackerMIL_Create();
         return try epnn(p);
     }
 
-    fn deinit(ptr: c.TrackerMIL) void {
+    pub fn deinit(ptr: c.TrackerMIL) void {
         c.TrackerMIL_Close(ptr);
     }
 
@@ -376,7 +376,7 @@ const imgcodecs = @import("imgcodecs.zig");
 const imgproc = @import("imgproc.zig");
 const file_path = "./libs/gocv/images/face.jpg";
 test "video BackgroundSubtractorMOG2" {
-    var img = try imgcodecs.imRead(file_path, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,file_path, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -391,7 +391,7 @@ test "video BackgroundSubtractorMOG2" {
 }
 
 test "video BackgroundSubtractorMOG2 with params" {
-    var img = try imgcodecs.imRead(file_path, .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,file_path, .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -406,7 +406,7 @@ test "video BackgroundSubtractorMOG2 with params" {
 }
 
 test "video BackgroundSubtractorKNN" {
-    var img = try imgcodecs.imRead(file_path, .color);
+    var img = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -421,7 +421,7 @@ test "video BackgroundSubtractorKNN" {
 }
 
 test "video BackgroundSubtractorKNN with params" {
-    var img = try imgcodecs.imRead(file_path, .color);
+    var img = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -436,7 +436,7 @@ test "video BackgroundSubtractorKNN with params" {
 }
 
 test "video CalcOpticalFlow.pyrLK" {
-    var img1 = try imgcodecs.imRead(file_path, .color);
+    var img1 = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img1.deinit();
     try testing.expectEqual(false, img1.isEmpty());
 
@@ -462,7 +462,7 @@ test "video CalcOpticalFlow.pyrLK" {
 }
 
 test "video CalcOpticalFlow.pyrLK with params" {
-    var img1 = try imgcodecs.imRead(file_path, .color);
+    var img1 = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img1.deinit();
     try testing.expectEqual(false, img1.isEmpty());
 
@@ -515,7 +515,7 @@ test "video CalcOpticalFlow.pyrLK with params" {
 }
 
 test "video CalcOpticalFlow.pyrLKWithParams" {
-    var img1 = try imgcodecs.imRead(file_path, .color);
+    var img1 = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img1.deinit();
     try testing.expectEqual(false, img1.isEmpty());
 
@@ -573,7 +573,7 @@ test "video CalcOpticalFlow.pyrLKWithParams" {
 }
 
 test "video findTransformECC" {
-    var img1 = try imgcodecs.imRead(file_path, .gray_scale);
+    var img1 = try imgcodecs.imRead(std.testing.io,file_path, .gray_scale);
     defer img1.deinit();
     try testing.expectEqual(false, img1.isEmpty());
 
@@ -602,7 +602,7 @@ test "video findTransformECC" {
     defer map_translation.deinit();
     const eec_iteration = 50;
     const eec_epsilon = -1;
-    var ct = try core.TermCriteria.init(.{ .count = true, .eps = true }, eec_iteration, eec_epsilon);
+    const ct = try core.TermCriteria.init(.{ .count = true, .eps = true }, eec_iteration, eec_epsilon);
 
     var input_mask = try Mat.init();
     defer input_mask.deinit();
@@ -640,7 +640,7 @@ test "video findTransformECC" {
 }
 
 test "video tracker MIL" {
-    var img = try imgcodecs.imRead(file_path, .color);
+    var img = try imgcodecs.imRead(std.testing.io,file_path, .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
