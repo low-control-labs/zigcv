@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const Mat = core.Mat;
@@ -47,8 +47,8 @@ pub const Window = struct {
 
         fn toEnum(wp: PropertyFlag, wf: anytype) Flag {
             const f: u32 = switch (@typeInfo(@TypeOf(wf))) {
-                .Int, .ComptimeInt => @intCast(wf),
-                .Float, .ComptimeFloat => @intFromFloat(wf),
+                .int, .comptime_int => @intCast(wf),
+                .float, .comptime_float => @intFromFloat(wf),
                 else => unreachable,
             };
             return switch (f) {
