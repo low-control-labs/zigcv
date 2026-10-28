@@ -14,7 +14,7 @@ const PointVector = core.PointVector;
 const PointsVector = core.PointsVector;
 const Point2fVector = core.Point2fVector;
 
-const img_dir = "./libs/gocv/images/";
+const img_dir = "./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/";
 const face_detect_filepath = img_dir ++ "face-detect.jpg";
 
 test "imgproc CLAHE" {

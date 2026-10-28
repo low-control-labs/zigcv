@@ -12,7 +12,7 @@ const Rect = core.Rect;
 const Net = dnn.Net;
 const Blob = dnn.Blob;
 
-const img_dir = "./libs/gocv/images/";
+const img_dir = "./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/";
 const cache_dir = "./.zig-cache/tmp/";
 
 const caffe_model_url = "http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel";

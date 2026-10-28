@@ -8,9 +8,10 @@ pub fn main(init: std.process.Init.Minimal) anyerror!void {
     defer args.deinit();
     const prog = args.next();
     const device_id_char = args.next() orelse {
-        std.log.err("usage: {s} [cameraID]", .{prog.?});
+        std.log.err("usage: {s} [cameraID] [cascade.xml]", .{prog.?});
         std.process.exit(1);
     };
+    const cascade_path: [:0]const u8 = args.next() orelse "zig-out/share/haarcascade_frontalface_default.xml";
     const device_id = try std.fmt.parseUnsigned(c_int, device_id_char, 10);
 
     // open webcam
@@ -31,8 +32,8 @@ pub fn main(init: std.process.Init.Minimal) anyerror!void {
     var classifier = try cv.CascadeClassifier.init();
     defer classifier.deinit();
 
-    classifier.load("./libs/gocv/data/haarcascade_frontalface_default.xml") catch {
-        std.debug.print("no xml", .{});
+    classifier.load(cascade_path) catch {
+        std.debug.print("can't load cascade: {s}\n", .{cascade_path});
         std.process.exit(1);
     };
 

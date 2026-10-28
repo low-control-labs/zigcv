@@ -475,7 +475,7 @@ test "photo AlignMTB" {
 }
 
 test "photo fastNlMeansDenoising" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face-detect.jpg", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -490,7 +490,7 @@ test "photo fastNlMeansDenoising" {
 }
 
 test "photo FastNlMeansDenoisingColoredMultiWithParams" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .gray_scale);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face-detect.jpg", .gray_scale);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -505,7 +505,7 @@ test "photo FastNlMeansDenoisingColoredMultiWithParams" {
 }
 
 test "photo fastNlMeansDenoisingColored" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face-detect.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -520,7 +520,7 @@ test "photo fastNlMeansDenoisingColored" {
 }
 
 test "photo fastNlMeansDenoisingColoredWithParams" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face-detect.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 

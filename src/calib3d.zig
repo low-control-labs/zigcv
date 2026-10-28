@@ -358,7 +358,7 @@ pub fn estimateAffine2DWithParams(
 const testing = std.testing;
 const imgcodecs = @import("imgcodecs.zig");
 const imgproc = @import("imgproc.zig");
-const img_dir = "./libs/gocv/images/";
+const img_dir = "./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/";
 const cache_dir = "./.zig-cache/tmp/";
 test "calib3d fisheye undistortImage" {
     var img = try imgcodecs.imRead(std.testing.io,img_dir ++ "fisheye_sample.jpg", .gray_scale);

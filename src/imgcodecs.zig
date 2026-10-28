@@ -259,7 +259,7 @@ pub fn imEncodeWithParams(file_ext: FileExt, img: Mat, comptime params: []const 
 }
 
 const testing = std.testing;
-const img_dir = "./libs/gocv/images/";
+const img_dir = "./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/";
 const cache_dir = "./.zig-cache/tmp/";
 const face_detect_img_path = img_dir ++ "face-detect.jpg";
 test "imgcodecs imread" {

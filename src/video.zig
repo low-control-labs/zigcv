@@ -374,7 +374,7 @@ pub const TrackerMIL = struct {
 const testing = std.testing;
 const imgcodecs = @import("imgcodecs.zig");
 const imgproc = @import("imgproc.zig");
-const file_path = "./libs/gocv/images/face.jpg";
+const file_path = "./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face.jpg";
 test "video BackgroundSubtractorMOG2" {
     var img = try imgcodecs.imRead(std.testing.io,file_path, .gray_scale);
     defer img.deinit();

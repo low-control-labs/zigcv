@@ -409,7 +409,7 @@ pub const VideoWriter = struct {
     }
 };
 
-const video_path = "libs/gocv/images/small.mp4";
+const video_path = "zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/small.mp4";
 const imgcodecs = @import("imgcodecs.zig");
 var out_buffer: [std.fs.max_path_bytes]u8 = undefined;
 
@@ -494,7 +494,7 @@ test "videoio VideoCapture toCodec failed" {
 }
 
 test "videoio VideoWriter" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face-detect.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face-detect.jpg", .color);
     defer img.deinit();
     try std.testing.expectEqual(false, img.isEmpty());
 

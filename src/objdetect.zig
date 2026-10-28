@@ -324,14 +324,14 @@ pub const QRCodeDetector = struct {
 const testing = std.testing;
 const imgcodecs = @import("imgcodecs.zig");
 test "objdetect CascadeClassifier" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
     var classifier = try CascadeClassifier.init();
     defer classifier.deinit();
 
-    try classifier.load("./libs/gocv/data/haarcascade_frontalface_default.xml");
+    try classifier.load("./zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/data/haarcascade_frontalface_default.xml");
 
     var rects = try classifier.detectMultiScale(img, testing.allocator);
     defer rects.deinit(testing.allocator);
@@ -340,14 +340,14 @@ test "objdetect CascadeClassifier" {
 }
 
 test "objdetect CascadeClassifierWithParams" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
     var classifier = try CascadeClassifier.init();
     defer classifier.deinit();
 
-    try classifier.load("libs/gocv/data/haarcascade_frontalface_default.xml");
+    try classifier.load("zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/data/haarcascade_frontalface_default.xml");
 
     var rects = try classifier.detectMultiScaleWithParams(img, 1.1, 3, 0, Size.init(0, 0), Size.init(0, 0), testing.allocator);
     defer rects.deinit(testing.allocator);
@@ -356,7 +356,7 @@ test "objdetect CascadeClassifierWithParams" {
 }
 
 test "objdetect HOGDescriptor" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -374,7 +374,7 @@ test "objdetect HOGDescriptor" {
 }
 
 test "objdetect HOGDescriptorWithParams" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/face.jpg", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/face.jpg", .color);
     defer img.deinit();
     try testing.expectEqual(false, img.isEmpty());
 
@@ -430,7 +430,7 @@ test "objdetect groupRectangles" {
 }
 
 test "objdetect QRCodeDetector" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/qrcode.png", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/qrcode.png", .color);
     try testing.expectEqual(false, img.isEmpty());
     defer img.deinit();
 
@@ -452,7 +452,7 @@ test "objdetect QRCodeDetector" {
 }
 
 test "objdetect Multi QRCodeDetector" {
-    var img = try imgcodecs.imRead(std.testing.io,"libs/gocv/images/multi_qrcodes.png", .color);
+    var img = try imgcodecs.imRead(std.testing.io,"zig-pkg/N-V-__8AADWhmwCea8O1mz0KvTANDfBLfYFRyNnW7fjqRQ49/images/multi_qrcodes.png", .color);
     try testing.expectEqual(false, img.isEmpty());
     defer img.deinit();
 
