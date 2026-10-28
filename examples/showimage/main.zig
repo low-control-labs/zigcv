@@ -13,15 +13,18 @@ pub fn main(init: std.process.Init) anyerror!void {
 
     // open display window
     const window_name = "Show Image";
-    var window = try cv.Window.init(window_name);
+    var window = cv.Window.init(std.heap.page_allocator, window_name);
     defer window.deinit();
 
     var img = try cv.imRead(init.io, img_PATH, .unchanged);
     defer img.deinit();
-    while (true) {
-        window.imShow(img);
-        if (window.waitKey(1) >= 0) {
-            break;
-        }
-    }
+    window.show(img) catch |err| switch (err) {
+        error.WindowClosed => return,
+        else => return err,
+    };
+    // Static image: just keep the window alive until a key press or close.
+    _ = window.waitKey(0) catch |err| switch (err) {
+        error.WindowClosed => return,
+        else => return err,
+    };
 }

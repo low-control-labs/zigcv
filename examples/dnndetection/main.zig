@@ -44,7 +44,7 @@ pub fn main(init: std.process.Init) anyerror!void {
 
     // open display window
     const window_name = "DNN Detection";
-    var window = try cv.Window.init(window_name);
+    var window = cv.Window.init(allocator, window_name);
     defer window.deinit();
 
     // prepare image matrix
@@ -100,8 +100,11 @@ pub fn main(init: std.process.Init) anyerror!void {
         defer prob_flattened.deinit();
         performDetection(&img, prob_flattened);
 
-        window.imShow(img);
-        if (window.waitKey(1) >= 0) {
+        window.show(img) catch |err| switch (err) {
+            error.WindowClosed => break,
+            else => return err,
+        };
+        if (window.pollKey() != null) {
             break;
         }
     }

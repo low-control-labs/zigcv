@@ -10,7 +10,7 @@ pub fn main() anyerror!void {
 
     // open display window
     const window_name = "Hello";
-    var window = try cv.Window.init(window_name);
+    var window = cv.Window.init(std.heap.page_allocator, window_name);
     defer window.deinit();
 
     var img = try cv.Mat.init();
@@ -22,8 +22,11 @@ pub fn main() anyerror!void {
             std.process.exit(1);
         };
 
-        window.imShow(img);
-        if (window.waitKey(1) >= 0) {
+        window.show(img) catch |err| switch (err) {
+            error.WindowClosed => break,
+            else => return err,
+        };
+        if (window.pollKey() != null) {
             break;
         }
     }

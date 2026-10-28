@@ -21,7 +21,7 @@ pub fn main(init: std.process.Init.Minimal) anyerror!void {
 
     // open display window
     const window_name = "Face Detect";
-    var window = try cv.Window.init(window_name);
+    var window = cv.Window.init(allocator, window_name);
     defer window.deinit();
 
     // prepare image matrix
@@ -55,8 +55,11 @@ pub fn main(init: std.process.Init.Minimal) anyerror!void {
             cv.gaussianBlur(img, &img, size, 0, 0, .{});
         }
 
-        window.imShow(img);
-        if (window.waitKey(1) >= 0) {
+        window.show(img) catch |err| switch (err) {
+            error.WindowClosed => break,
+            else => return err,
+        };
+        if (window.pollKey() != null) {
             break;
         }
     }
