@@ -43,6 +43,10 @@
             .url = "git+https://github.com/OpenMathLib/OpenBLAS#v0.3.29",
             .hash = "N-V-__8AAJDq2ArxA3D3ZNmp4y-Up3s7BzoPp_EXTA0xL7KN",
         },
+        .fenster = .{
+            .url = "git+https://github.com/zserge/fenster#e700581dfb7956dd161aee44fc0cff0663e789a1",
+            .hash = "N-V-__8AAN3HGACBfCfDSgRMV2OyJS65n8kKxGdN3fUV9R1E",
+        },
     },
     .paths = .{
         // This makes *all* files, recursively, included in this package. It is generally
