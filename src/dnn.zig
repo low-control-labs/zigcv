@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c_api.zig");
+const c = @import("c");
 const core = @import("core.zig");
 const utils = @import("utils.zig");
 const assert = std.debug.assert;
@@ -89,9 +89,9 @@ pub const Net = struct {
         self.*.ptr = null;
     }
 
-    pub fn readNet(model: []const u8, config: []const u8) !Self {
-        _ = try ensureFileExists(model, false);
-        _ = try ensureFileExists(config, false);
+    pub fn readNet(io: std.Io, model: []const u8, config: []const u8) !Self {
+        _ = try ensureFileExists(io, model, false);
+        _ = try ensureFileExists(io, config, false);
         const nn_ptr = c.Net_ReadNet(@as([*]const u8, @ptrCast(model)), @as([*]const u8, @ptrCast(config)));
         return try initFromC(nn_ptr);
     }
@@ -107,9 +107,9 @@ pub const Net = struct {
         return try initFromC(nn_ptr);
     }
 
-    pub fn readNetFromCaffe(prototxt: []const u8, caffe_model: []const u8) !Self {
-        _ = try ensureFileExists(prototxt, false);
-        _ = try ensureFileExists(caffe_model, false);
+    pub fn readNetFromCaffe(io: std.Io, prototxt: []const u8, caffe_model: []const u8) !Self {
+        _ = try ensureFileExists(io, prototxt, false);
+        _ = try ensureFileExists(io, caffe_model, false);
         const nn_ptr = c.Net_ReadNetFromCaffe(@as([*]const u8, @ptrCast(prototxt)), @as([*]const u8, @ptrCast(caffe_model)));
         return try initFromC(nn_ptr);
     }
@@ -121,8 +121,8 @@ pub const Net = struct {
         return try initFromC(nn_ptr);
     }
 
-    pub fn readNetFromTensorflow(model: []const u8) !Self {
-        _ = try ensureFileExists(model, false);
+    pub fn readNetFromTensorflow(io: std.Io, model: []const u8) !Self {
+        _ = try ensureFileExists(io, model, false);
         const nn_ptr = c.Net_ReadNetFromTensorflow(@as([*]const u8, @ptrCast(model)));
         return try initFromC(nn_ptr);
     }
@@ -133,14 +133,14 @@ pub const Net = struct {
         return try initFromC(nn_ptr);
     }
 
-    pub fn readNetFromTorch(model: []const u8) !Self {
-        _ = try ensureFileExists(model, false);
+    pub fn readNetFromTorch(io: std.Io, model: []const u8) !Self {
+        _ = try ensureFileExists(io, model, false);
         const nn_ptr = c.Net_ReadNetFromTorch(utils.castZigU8ToC(model));
         return try initFromC(nn_ptr);
     }
 
-    pub fn readNetFromONNX(model: []const u8) !Self {
-        _ = try ensureFileExists(model, false);
+    pub fn readNetFromONNX(io: std.Io, model: []const u8) !Self {
+        _ = try ensureFileExists(io, model, false);
         const nn_ptr = c.Net_ReadNetFromONNX(@as([*]const u8, @ptrCast(model)));
         return try initFromC(nn_ptr);
     }
@@ -215,11 +215,11 @@ pub const Net = struct {
         var res: c.IntVector = undefined;
         defer c.IntVector_Close(res);
         _ = c.Net_GetUnconnectedOutLayers(self.ptr, &res);
-        var return_res = std.ArrayList(i32).init(allocator);
+        var return_res: std.ArrayList(i32) = .empty;
         {
             var i: usize = 0;
             while (i < res.length) : (i += 1) {
-                try return_res.append(res.val[i]);
+                try return_res.append(allocator, res.val[i]);
             }
         }
         return return_res;
@@ -240,7 +240,7 @@ pub const Net = struct {
         defer c.CStrings_Close(c_strs);
         c.Net_GetLayerNames(self.ptr, &c_strs);
         const len = @as(usize, @intCast(c_strs.length));
-        var return_array = try arena_allocator.alloc([]const u8, len);
+        const return_array = try arena_allocator.alloc([]const u8, len);
         for (return_array, 0..) |*item, i| {
             item.* = try arena_allocator.dupe(u8, std.mem.span(c_strs.strs[i]));
         }
@@ -283,7 +283,7 @@ pub const Blob = struct {
             swap_rb,
             crop,
         );
-        var new_blob_mat = try Mat.initFromC(new_c_blob);
+        const new_blob_mat = try Mat.initFromC(new_c_blob);
         return try initFromMat(new_blob_mat);
     }
 
@@ -304,7 +304,7 @@ pub const Blob = struct {
         ddepth: Mat.MatType,
     ) !Self {
         var new_blob_mat = try Mat.init();
-        var c_mats = try Mat.toCStructs(images);
+        const c_mats = try Mat.toCStructs(images);
         c.Net_BlobFromImages(
             c_mats,
             new_blob_mat.toC(),
@@ -405,7 +405,7 @@ pub fn nmsBoxes(
         .length = @as(i32, @intCast(bboxes.len)),
     };
 
-    var c_scores_struct = c.FloatVector{
+    const c_scores_struct = c.FloatVector{
         .val = @as([*]f32, @ptrCast(scores.ptr)),
         .length = @as(i32, @intCast(scores.len)),
     };
@@ -427,7 +427,7 @@ pub fn nmsBoxes(
     {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            try indices.append(indices_vector.val[i]);
+            try indices.append(allocator, indices_vector.val[i]);
         }
     }
     return indices;
@@ -479,7 +479,7 @@ pub fn nmsBoxesWithParams(
     {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            try indices.append(indices_vector.val[i]);
+            try indices.append(allocator, indices_vector.val[i]);
         }
     }
     return indices;
